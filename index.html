@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>David Delivery - Adama</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-button-color: #2481cc;
+            --tg-theme-secondary-bg-color: #f4f4f7;
+        }
+
+        body {
+            font-family: -apple-system, sans-serif;
+            background-color: var(--tg-theme-secondary-bg-color);
+            margin: 0; padding: 0; padding-bottom: 100px;
+            -webkit-user-select: none;
+        }
+
+        /* Header & Search */
+        .header {
+            background: #fff; padding: 15px; position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .search-container {
+            background: #f1f1f4; border-radius: 12px; padding: 10px;
+            display: flex; align-items: center;
+        }
+        .search-container input {
+            border: none; background: transparent; width: 100%; 
+            margin-left: 10px; outline: none; font-size: 16px;
+        }
+
+        /* Horizontal Cafes */
+        .section-title { padding: 10px 15px 0; font-weight: bold; font-size: 14px; color: #555; }
+        .categories {
+            display: flex; overflow-x: auto; padding: 10px 15px; gap: 10px;
+            scrollbar-width: none;
+        }
+        .categories::-webkit-scrollbar { display: none; }
+        .cat-item {
+            padding: 8px 18px; border-radius: 20px; border: 1px solid #ddd;
+            background: #fff; white-space: nowrap; font-size: 13px; cursor: pointer;
+        }
+        .cat-item.active { background: #2481cc; color: #fff; border: none; }
+
+        /* Product Grid */
+        .product-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px;
+        }
+        .product-card {
+            background: #fff; border-radius: 15px; overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column;
+        }
+        .product-card img { width: 100%; height: 110px; object-fit: cover; background: #eee; }
+        .product-info { padding: 10px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .product-name { font-weight: 600; font-size: 13px; margin-bottom: 5px; height: 34px; overflow: hidden; }
+        .product-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
+        .price { color: #2481cc; font-weight: 700; font-size: 14px; }
+        .add-btn {
+            background: #2481cc; color: white; border: none;
+            padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
+        }
+
+        /* Nav */
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%; background: #fff;
+            display: flex; justify-content: space-around; padding: 12px 0;
+            border-top: 1px solid #eee; z-index: 100;
+        }
+        .nav-link { text-align: center; color: #999; font-size: 11px; text-decoration: none; flex: 1; }
+        .nav-link.active { color: #2481cc; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="search-container">
+            🔍 <input type="text" id="searchInput" placeholder="Search food or cafe..." onkeyup="searchFood()">
+        </div>
+    </div>
+
+    <div class="section-title">Select Cafe/Restaurant</div>
+    <div class="categories" id="cafeList">
+        </div>
+
+    <div class="section-title">Menu Items</div>
+    <div class="product-grid" id="foodGrid">
+        </div>
+
+    <nav class="bottom-nav">
+        <a href="#" class="nav-link active">🏠<br>Home</a>
+        <a href="#" class="nav-link">🕒<br>Orders</a>
+        <a href="#" class="nav-link">👤<br>Profile</a>
+    </nav>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const cafes = [
+            "🏰 Helan Cafe", "🌿 Garden Paradise", "☕ Hewi Cafe", "🏛️ Baz Hotel", 
+            "🍰 Sweet Tooth", "🍗 Jambo House", "🍕 Selam Pizza", "🥗 Green Leaf", 
+            "🥐 Mami Cafe", "🍲 Abyssinia", "🍟 Burger Queen", "🥤 selam World", 
+            "🥨 ASTU Lounge", "🍳 Morning Star", "🥘 fast food"
+        ];
+
+        const foodItems = [
+            { name: "🥩 Special Kitfo", price: 450, img: "https://images.unsplash.com/photo-1542358935821-e4e9f3f3c15d?w=200" },
+            { name: "🥘 Beyaynetu", price: 180, img: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200" },
+            { name: "🍗 Doro Wat", price: 550, img: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200" },
+            { name: "🥩 Beef Tibs", price: 350, img: "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=200" },
+            { name: "🍛 Shiro Wat", price: 120, img: "https://images.unsplash.com/photo-1541518763669-27fef04b14ea?w=200" },
+            { name: "🍕 Special Pizza", price: 400, img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200" },
+            { name: "🍔 Double Burger", price: 280, img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200" },
+            { name: "🍝 Pasta Full", price: 150, img: "https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8?w=200" },
+            { name: "🍲 Firfir", price: 130, img: "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=200" },
+            { name: "🍳 Scrambled Eggs", price: 110, img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=200" },
+            { name: "💧 Water (2L)", price: 45, img: "https://images.unsplash.com/photo-1523362628745-0c100150b504?w=200" },
+            { name: "🥖 Happy Bread", price: 25, img: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200" },
+            { name: "🍰 Chocolate Cake", price: 80, img: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=200" },
+            { name: "☕ Macchiato", price: 50, img: "https://images.unsplash.com/photo-1541167760496-162955ed8a9f?w=200" },
+            { name: "🥤 Fresh Juice", price: 120, img: "https://images.unsplash.com/photo-1536882247484-5eb4ed7285d0?w=200" },
+            { name: "🍗 Fried Chicken", price: 320, img: "https://images.unsplash.com/photo-1562967914-608f82629710?w=200" },
+            { name: "🥪 Club Sandwich", price: 240, img: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=200" },
+            { name: "🍟 French Fries", price: 100, img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200" },
+            { name: "🍲 Kikil", price: 260, img: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=200" },
+            { name: "🍛 Kurt Beef", price: 600, img: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=200" },
+            { name: "🥤 Coca Cola (500ml)", price: 40, img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=200" },
+            { name: "🥛 Yogurt (Ergo)", price: 90, img: "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=200" },
+            { name: "🥗 Veggie Salad", price: 140, img: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200" },
+            { name: "🥨 Sambusa (2pcs)", price: 50, img: "https://images.unsplash.com/photo-1601050638917-3d943b482599?w=200" },
+            { name: "🥞 Pancakes", price: 160, img: "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=200" },
+            { name: "🍗 Quanta Firfir", price: 320, img: "https://images.unsplash.com/photo-1541014741259-de529411b96a?w=200" },
+            { name: "🍵 Tea (Shay)", price: 25, img: "https://images.unsplash.com/photo-1594631252845-29fc4cc8cde9?w=200" },
+            { name: "🥐 Croissant", price: 70, img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=200" },
+            { name: "🍲 Gomen Besiga", price: 380, img: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=200" },
+            { name: "🍚 Rice with Veg", price: 180, img: "https://images.unsplash.com/photo-1512058560366-cd242d4235cd?w=200" }
+        ];
+
+        let cart = [];
+
+        // Load Cafes
+        const cafeContainer = document.getElementById('cafeList');
+        cafes.forEach((cafe, index) => {
+            const div = document.createElement('div');
+            div.className = `cat-item ${index === 0 ? 'active' : ''}`;
+            div.innerText = cafe;
+            div.onclick = () => {
+                document.querySelectorAll('.cat-item').forEach(c => c.classList.remove('active'));
+                div.classList.add('active');
+            };
+            cafeContainer.appendChild(div);
+        });
+
+        // Load Food
+        function renderFood(items) {
+            const grid = document.getElementById('foodGrid');
+            grid.innerHTML = '';
+            items.forEach(item => {
+                const card = `
+                    <div class="product-card">
+                        <img src="${item.img}" alt="${item.name}">
+                        <div class="product-info">
+                            <div class="product-name">${item.name}</div>
+                            <div class="product-footer">
+                                <span class="price">${item.price} ETB</span>
+                                <button class="add-btn" onclick="addToCart('${item.name}', ${item.price})">Add</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += card;
+            });
+        }
+
+        renderFood(foodItems);
+
+        function addToCart(name, price) {
+            cart.push({name, price});
+            tg.HapticFeedback.impactOccurred('light');
+            
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            tg.MainButton.setText(`ORDER NOW (${total} ETB)`);
+            tg.MainButton.show();
+        }
+
+        tg.MainButton.onClick(() => {
+            const activeCafe = document.querySelector('.cat-item.active').innerText;
+            const orderData = {
+                cafe: activeCafe,
+                items: cart,
+                total: cart.reduce((sum, i) => sum + i.price, 0)
+            };
+            tg.sendData(JSON.stringify(orderData));
+            tg.close();
+        });
+
+        function searchFood() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = foodItems.filter(i => i.name.toLowerCase().includes(query));
+            renderFood(filtered);
+        }
+    </script>
+</body>
+</html>
