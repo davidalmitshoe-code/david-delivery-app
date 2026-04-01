@@ -1,4 +1,24 @@
-import logging
+import os
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import threading
+
+# 1. This creates a tiny "fake" website so Render stays happy
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"David Delivery is Live!")
+
+def run_health_server():
+    # Render uses port 10000 by default
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
+    server.serve_forever()
+
+# 2. Start this server in the background
+threading.Thread(target=run_health_server, daemon=True).start()
+
+# --- YOUR ORIGINAL CODE STARTS HERE ---import logging
 import json
 from telegram import (
     Update, WebAppInfo, ReplyKeyboardMarkup, 
