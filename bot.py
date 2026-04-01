@@ -1,4 +1,10 @@
 import os
+import threading
+import logging  # <--- ADD THIS LINE HERE
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from telegram import Update
+# ... the rest of your code ...
+import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import threading
 
