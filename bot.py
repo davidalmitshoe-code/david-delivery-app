@@ -36,7 +36,7 @@ from telegram.ext import (
 )
 
 # --- CONFIGURATION ---
-TOKEN = '8644137742:AAFQiJ6dShSPdWVjXvgSKX3fghG7stDZrhs'
+TOKEN = '8644137742:AAHvP0U3U31POminRp0ON29ulJTZsZ9tb34'
 ADMIN_ID = 998942116 
 WEBAPP_URL = "https://davidalmitshoe-code.github.io/david-delivery-app/" 
 
@@ -143,7 +143,7 @@ def main():
     app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, web_app_data))
 
     print("🚀 DAVID Delivery is LIVE!")
-    app.run_polling()
+    app.run_polling(drop_pending_updates=True)
 
 if __name__ == '__main__':
     main()
