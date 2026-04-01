@@ -1,5 +1,16 @@
 import os
 import threading
+import logging
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+
+# This part tells the bot how to show errors in the logs
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO)
+import os
+import threading
 import logging  # <--- ADD THIS LINE HERE
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from telegram import Update
