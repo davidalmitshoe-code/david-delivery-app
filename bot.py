@@ -137,8 +137,25 @@ async def web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await context.bot.send_message(chat_id=ADMIN_ID, text=admin_msg, parse_mode='Markdown')
 
+import os
+import threading
+from flask import Flask
+
+# 1. Setup the Flask app for Render's Health Check
+web_app = Flask(__name__)
+
+@web_app.route('/')
+def health_check():
+    return "HOSSANA-DELIVERY-BOT is Live!"
+
+def run_flask():
+    # Render provides a PORT environment variable automatically
+    port = int(os.environ.get("PORT", 10000))
+    web_app.run(host='0.0.0.0', port=port)
+
 def main():
     print("--- 🛠️ SCRIPT STARTING ---")
+    # Your existing Application builder
     app = Application.builder().token(TOKEN).read_timeout(30).connect_timeout(30).build()
 
     conv_handler = ConversationHandler(
@@ -153,6 +170,10 @@ def main():
     app.add_handler(conv_handler)
     app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, web_app_data))
 
+    # 2. Start the Flask web server in the background so Render is happy
+    threading.Thread(target=run_flask, daemon=True).start()
+
+    # 3. Start the Telegram Bot
     print("🚀 DAVID Delivery is LIVE!")
     app.run_polling(drop_pending_updates=True)
 
